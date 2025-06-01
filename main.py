@@ -15,7 +15,7 @@ with open("config.json", "r", encoding="utf-8") as f:
 TOKEN = config["token"]
 PREFIX = config["prefix"]
 
-YOUTUBE_API_KEY = "AIzaSyCNajbhrvtJEdBTgmyCjJSuO2rYlOJewOM"  # Замени на свой API-ключ
+YOUTUBE_API_KEY = ""  # Замени на свой API-ключ
 
 # Настройка интентов
 intents = discord.Intents.default()
