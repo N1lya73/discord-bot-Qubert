@@ -15,37 +15,7 @@ with open("config.json", "r", encoding="utf-8") as f:
 TOKEN = config["token"]
 PREFIX = config["prefix"]
 
-YOUTUBE_API_KEY = ""  # Замени на свой API-ключ
-
-# Список фильтров для команды случайной песни
-SEARCH_TERMS = [ 
-    "pop music",
-    "rock song",
-    "metal song",
-    "rap music",
-    "hip hop",
-    "lofi",
-    "jazz music",
-    "electronic music",
-    "EDM",
-    "house music",
-    "indie music",
-    "synthwave",
-    "vocal trance",
-    "trap beat",
-    "future bass",
-    "instrumental music",
-    "classical piano",
-    "R&B song",
-    "acoustic guitar",
-    "melodic dubstep",
-    "80s hit song",
-    "top 100 music",
-    "english music"
-] 
-
-# Cлова, по которым будем отфильтровывать в случайной музыке
-INDIAN_KEYWORDS = ["hindi", "bollywood", "punjabi", "bharat", "india", "desi", "bhojpuri", "jumpscares"]
+YOUTUBE_API_KEY = "AIzaSyCNajbhrvtJEdBTgmyCjJSuO2rYlOJewOM"  # Замени на свой API-ключ
 
 # Настройка интентов
 intents = discord.Intents.default()
@@ -259,10 +229,54 @@ async def guess(interaction: discord.Interaction):
 async def random_song(interaction: discord.Interaction):
     await interaction.response.defer()
 
-    search_term = random.choice(SEARCH_TERMS)
+    # Cлова, по которым будем отфильтровывать в случайной музыке
+    BAD_KEYWORDS = ["hindi", "bollywood", "punjabi", "bharat", "india", "desi", "bhojpuri", "jumpscares", "tutorial", "riffs", "parody", "ai", "live"]
+
+    # 50% шанс что выпадает Эминем
+    if random.random() < 0.5:
+        search_term = random.choice([
+            "Eminem"
+        ])
+    else:
+        search_term = random.choice([
+            "Eminem",
+            "Limp Bizkit",
+            "Linkin Park",
+            "Slipknot",
+            "Dr. Dre",
+            "Static-X",
+            "Avenged Sevenfold",
+            "Megadeth",
+            "Disturbed",
+            "Styles of Beyond",
+            "Fort Minor",
+            "N.W.A",
+            "Metallica",
+            "Iron Maiden",
+            "Black Sabbath",
+            "Slayer",
+            "Pantera",
+            "Judas Priest",
+            "Lamb of God",
+            "System of a Down",
+            "Mastodon",
+            "Dope",
+            "Skindred",
+            "Rammstein",
+            "Rob Zombie",
+            "Mick Gordon",
+            "Gorillaz",
+            "I Prevail",
+            "Twisted Sister",
+            "Celldweller",
+            "Sabaton",
+            "Green Day",
+            "Five Finger Death Punch"
+        ])
+
     search_url = (
         f"https://www.googleapis.com/youtube/v3/search"
-        f"?part=snippet&type=video&maxResults=15"
+        f"?part=snippet&type=video&maxResults=5"
         f"&q={search_term}&relevanceLanguage=en&key={YOUTUBE_API_KEY}"
     )
 
@@ -274,9 +288,12 @@ async def random_song(interaction: discord.Interaction):
             await interaction.followup.send("**Ошибка:** Не удалось найти песню. Попробуй ещё раз.")
             return
 
-        # Список videoId для получения длительности
-        video_ids = [item["id"]["videoId"] for item in search_data["items"]]
-
+        video_ids = [
+            item["id"]["videoId"] 
+            for item in search_data.get("items", []) 
+            if "videoId" in item.get("id", {})
+        ]
+        
         videos_url = (
             f"https://www.googleapis.com/youtube/v3/videos"
             f"?part=contentDetails,snippet&id={','.join(video_ids)}&key={YOUTUBE_API_KEY}"
@@ -291,26 +308,24 @@ async def random_song(interaction: discord.Interaction):
         title = item["snippet"]["title"].lower()
         duration = item["contentDetails"]["duration"]
 
-        # Фильтрация индийской музыки по ключевым словам
-        if any(keyword in title for keyword in INDIAN_KEYWORDS):
+        if any(keyword in title for keyword in BAD_KEYWORDS):
             continue
 
-        # Проверка длительности (исключение Shorts)
         try:
             duration_seconds = isodate.parse_duration(duration).total_seconds()
         except:
             continue
 
-        if duration_seconds >= 60:
+        if 70 <= duration_seconds <= 600:
             valid_videos.append((video_id, item["snippet"]["title"]))
 
     if not valid_videos:
-        await interaction.followup.send("**Ошибка:** Все подходящие видео были слишком короткими или не соответствовали фильтрам. Попробуй ещё раз.")
+        await interaction.followup.send("**Ошибка:** Все подходящие видео были слишком короткими, длинными или не соответствовали фильтрам. Попробуй ещё раз.")
         return
 
     selected_id, selected_title = random.choice(valid_videos)
     youtube_url = f"https://www.youtube.com/watch?v={selected_id}"
-    await interaction.followup.send(f"{youtube_url}")
+    await interaction.followup.send(youtube_url)
 
 # Запуск бота
 bot.run(TOKEN)
