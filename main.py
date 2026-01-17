@@ -5,6 +5,7 @@ import asyncio
 import aiohttp
 import isodate
 import discord
+import re
 from discord.ext import commands
 from discord import app_commands
 
@@ -16,6 +17,10 @@ TOKEN = config["token"]
 PREFIX = config["prefix"]
 
 YOUTUBE_API_KEY = ""  # Замени на свой API-ключ
+
+GITHUB_OWNER = "N1lya73"
+GITHUB_REPO = "discord-bot-Qubert"
+GITHUB_BRANCH = "main"  # или master
 
 # Настройка интентов
 intents = discord.Intents.default()
@@ -36,7 +41,19 @@ replies = {
 keyword_triggers = {
     "гойда": "Гойда! Братья и Сёстры!",
     "42": "ААА 42 БРАТУХА КЕМЕРОВСКАЯ ОБЛАСТЬ!!!",
-    "zzz": "О, наш слоняра!"
+    "z": "О, наш слоняра!",
+    "царь": "https://cdn.discordapp.com/attachments/1427715312354332745/1461727574307766455/image.png?ex=696b9b63&is=696a49e3&hm=a8438617ff18706112260a68a53fadaff7ec7c79963256146c3c1c5b61ef1459&",
+    "штука": "За 150 тысяч?",
+    "67": "SIX SEVEN!!!",
+    "кирилл": "О тот самый снюсоед",
+    "димон": "О тот самый блеватрон https://tenor.com/view/strogo-clown-gif-5404632166871307132",
+    "серый": "О тот самый ковбой с карсаром",
+    "стёпа": "О тот самый xros 3-4 mini https://cdn.discordapp.com/attachments/1376200239987560468/1461729242919207122/orig.png?ex=696b9cf1&is=696a4b71&hm=b4bb88d3f4736aa6d3a1a5d889b8f49292f1db34f69b0e6c123b542b1f4bd490&",
+    "дима": "О тот самый Каргин",
+    "артём": "О тот самый молочник с таматным соком",
+    "глеб": "О тот самый четырёх глазый бородач",
+    "го": "https://cdn.discordapp.com/attachments/1427715312354332745/1461431048549306574/89e7c6122689547ad03fc4975aab1e11.png?ex=696b2ffa&is=6969de7a&hm=1919106b1cfb007c7a87eb3fecdadf2dbf4f68ff0e8d3a115901094f173be69d&",
+    "гитлер": "О тот самый поматросил и бросил"
 }
 
 # Сохраняем время старта бота
@@ -101,6 +118,22 @@ async def on_message(message):
             await message.add_reaction(emoji)
         except:
             pass
+    
+    # Реакция на IP серверов CS
+    cs_sound_links = [
+        "https://cdn.discordapp.com/attachments/1376200239987560468/1461796463095975996/0116_21.mp4?ex=696bdb8b&is=696a8a0b&hm=1ba7d5c64e6b3af7a96dace45fd5286c44ca8ce46818d6c48d7169c9074894c7&",
+        "https://cdn.discordapp.com/attachments/1376200239987560468/1461796864612634836/0116_2.mp4?ex=696bdbeb&is=696a8a6b&hm=e316419cc5ffa6432e7a6d51f5cd3458c658ac82cfc5b5f2a18fb3f45f9c501f&",
+        "https://cdn.discordapp.com/attachments/1376200239987560468/1461797320650657944/0116_22.mp4?ex=696bdc58&is=696a8ad8&hm=58318573e86dd0e89aacaef2b63e77317f86c26298412fd86a3624ea8fd86d69&",
+        "https://cdn.discordapp.com/attachments/1376200239987560468/1461797837133058109/0116_23.mp4?ex=696bdcd3&is=696a8b53&hm=4460fe9f89e2ed605deffe95da3209c8a4001b50e349afcd055c225b8f03221f&"
+    ]  # ← потом заменишь на свои
+
+    import re
+    ip_pattern = r"(connect\s+)?(\d{1,3}\.){3}\d{1,3}:\d{2,5}"
+
+    if re.search(ip_pattern, content):
+        sound_link = random.choice(cs_sound_links)
+        await message.channel.send(sound_link)
+        return
 
     await bot.process_commands(message)  # Обработка команд
 
@@ -233,7 +266,7 @@ async def random_song(interaction: discord.Interaction):
     BAD_KEYWORDS = ["hindi", "bollywood", "punjabi", "bharat", "india", "desi", "bhojpuri", "jumpscares", "tutorial", "riffs", "parody", "ai", "live"]
 
     # 50% шанс что выпадает Эминем
-    if random.random() < 0.5:
+    if random.random() < 0.15:
         search_term = random.choice([
             "Eminem"
         ])
@@ -326,6 +359,31 @@ async def random_song(interaction: discord.Interaction):
     selected_id, selected_title = random.choice(valid_videos)
     youtube_url = f"https://www.youtube.com/watch?v={selected_id}"
     await interaction.followup.send(youtube_url)
+
+# Команда /lastupdate
+@bot.tree.command(name="lastupdate", description="Когда бот последний раз обновлялся (GitHub)")
+async def lastupdate(interaction: discord.Interaction):
+    url = (
+        f"https://api.github.com/repos/"
+        f"{GITHUB_OWNER}/{GITHUB_REPO}/commits/{GITHUB_BRANCH}"
+    )
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status != 200:
+                await interaction.response.send_message(
+                    "**Ошибка:** Не удалось получить данные с GitHub"
+                )
+                return
+            data = await resp.json()
+
+    date_raw = data["commit"]["committer"]["date"]
+    date = date_raw.replace("T", " ").replace("Z", "")
+
+    await interaction.response.send_message(
+        f"**Дата последнего обновления:** `{date}`"
+    )
+
 
 # Запуск бота
 bot.run(TOKEN)
